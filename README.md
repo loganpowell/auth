@@ -5,6 +5,12 @@ AWS Lambda Authorizers serve as a gatekeeper to one or more of your lambda funct
 [HTTP API](https://aws.amazon.com/blogs/compute/announcing-http-apis-for-amazon-api-gateway/)) to
 authorize calls to your lambda via API Gateway.
 
+## Actors
+
+| User/Visit | App | λ Authen | λ Author | Gateway | λ Func | DB/Store | Github |
+| ---------- | --- | -------- | -------- | ------- | ------ | -------- | ------ |
+| Human UX/I | Up  | Servrlss | Servrlss | Up      | Srvrls | Srvrls   | 3rd pr |
+
 The basic lifecycle of an authorized request goes like this:
 
 ## User Journey
@@ -58,7 +64,7 @@ Reading Materials:
 - Best Practices for handling JWTs
   [Blog from Hasura](https://hasura.io/blog/best-practices-of-using-jwt-with-graphql/)
 - Refresh Tokens for FaunaDB
-  [Gist]((https://gist.github.com/colllin/fd7a40bb4f0f16603e68db0e6621369f)
+  [Gist](https://gist.github.com/colllin/fd7a40bb4f0f16603e68db0e6621369f)
 
 ### Authorization Task
 
@@ -93,7 +99,8 @@ Authorization Steps
       |         |         |         |         |--(10)-->|         |         |
       |         |         |         |         |         |--(11)-->|         |
       |         |         |         |         |         |<--(12)--|         |
-      |         |<-----------------(13)-----------------|         |         |
+      |         |         |         |         |<--(13)--|         |         |
+      |         |<------------(14)------------|         |         |         |
 
 ```
 
@@ -107,8 +114,9 @@ Authorization Steps
    have access for the operation requested)
 10. If valid, gateway allows the operation via the Functional Lambda
 11. That lambda can now operate on the store/DB (FaunaDB)
-12. The operation returns from the DB
-13. The app state is updated (fwew! 😓)
+12. The operation returns from the DB to Function
+13. Function to Gateway
+14. Gateway to app state: updated (fwew! 😓)
 
 #### If a valid policy is found in cache...
 
@@ -118,14 +126,16 @@ Authorization Steps
       |         |         |         |         |---(4)-->|         |         |
       |         |         |         |         |         |---(5)-->|         |
       |         |         |         |         |         |<--(6)---|         |
-      |         |<-----------------(7)------------------|         |         |
+      |         |         |         |         |<--(7)---|         |         |
+      |         |<------------(8)-------------|         |         |         |
 
 ```
 
 4. Gateway allows the operation via the Functional Lambda
 5. That lambda can now operate on the store/DB (FaunaDB)
 6. The operation returns from the DB
-7. The app state is updated (fwew! 😅)
+7. Function to Gateway
+8. Gateway to app state: updated (fwew! 😓)
 
 ### Refresh Process
 
@@ -139,17 +149,19 @@ Find some guidance for implementing token refreshments
 | User/Visit | App | λ Authen | λ Author | Gateway | λ Func | DB/Store | Github |
       .         .         .         .         .         .         .         .
       |---(1)-->|         |         |         |         |         |         |
-      |         |---(5)-->|         |         |         |         |         |
-      |         |         |<--(4)---|         |         |         |         |
-      |         |         |------------------(5)----------------->|         |
-      |         |         |<-----------------(6)------------------|         |
-      |         |         |<--(4)---|         |         |         |         |
+      |         |-------------(2)------------>|         |         |         |
+      |         |         |         |<--(3)---|         |         |         |
+      |         |         |         |--------(4)------->|         |         |
+      |         |         |         |         |         |---(5)-->|         |
+      |         |         |         |         |         |<--(6)---|         |
+      |         |         |         |<-------(7)--------|         |         |
+      |         |         |         |---(8)-->|         |         |         |
+      |         |<------------(9)-------------|         |         |         |
       .         .         .         .         .         .         .         .
 ```
 
 1. User tries to act on a resource
-2. Before sending the HTTP, every fetch first checks if the access token (`HttpOnly` cookie) has
-   expired
+2. App sends request to Gateway, but gateway doesn't have a cached/non-expired policy for the token
 3. Gateway doesn't find a cached IAM Policy that's valid (expired)
 4. Authorizer notices that the JWT has expired
 
@@ -167,7 +179,7 @@ Find an example
 
 ### Example IAM Policy Details
 
-```json
+```js
 {
   "Version": "2012-10-17",
   // any operation except POST
