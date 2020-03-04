@@ -65,6 +65,7 @@ Reading Materials:
   [Blog from Hasura](https://hasura.io/blog/best-practices-of-using-jwt-with-graphql/)
 - Refresh Tokens for FaunaDB
   [Gist](https://gist.github.com/colllin/fd7a40bb4f0f16603e68db0e6621369f)
+- Watch [this video](https://www.youtube.com/watch?v=CPbvxxslDTU) on OAuth 2.0
 
 ### Authorization Task
 
@@ -165,6 +166,11 @@ Find some guidance for implementing token refreshments
 3. Gateway doesn't find a cached IAM Policy that's valid (expired)
 4. Authorizer notices that the JWT has expired
 
+Reading Materials
+
+- Watch [this YouTube Video](https://youtu.be/9i_0ia1eCdA?t=46) on Refresh Tokens
+- Watch [this video](https://youtu.be/-Z57Ss_uiuc?t=140) on JWTs and Refresh Tokens
+
 ### Policy "Blueprint"
 
 ```js
@@ -203,6 +209,7 @@ Find an example
 
 - Add cache to API Gateway for `HttpOnly` headers for some - rarely changing - data
 - Add cache to ServiceWorker for some `fetch`es
+- Always think of how to cache larger payloads
 
 ## Development Journey
 
