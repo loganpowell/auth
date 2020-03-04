@@ -5,11 +5,11 @@ AWS Lambda Authorizers serve as a gatekeeper to one or more of your lambda funct
 [HTTP API](https://aws.amazon.com/blogs/compute/announcing-http-apis-for-amazon-api-gateway/)) to
 authorize calls to your lambda via API Gateway.
 
-## Actors
+<!-- ## Actors
 
 | User/Visit | App | λ Authen | λ Author | Gateway | λ Func | DB/Store | Github |
 | ---------- | --- | -------- | -------- | ------- | ------ | -------- | ------ |
-| Human UX/I | Up  | Servrlss | Servrlss | Up      | Srvrls | Srvrls   | 3rd pr |
+| Human UX/I | Up  | Servrlss | Servrlss | Up      | Srvrls | Srvrls   | 3rd pr | -->
 
 The basic lifecycle of an authorized request goes like this:
 
@@ -80,7 +80,8 @@ Reading Materials:
 Authorization Steps
 
 1.  Authenticated users acts on a resource (some CRUD operation on DB) that resides behind AWS
-    Gateway
+    Gateway. The expiration date of the current token is stored in localstorage (only the expiration
+    date)
 2.  App sends the token within the HTTP Header to AWS Gateway (Apex Up Microservice)
 3.  The API Gateway checks it's local cache to see if there's a known valid AWS IAM (user access)
     policy for the token.
@@ -149,18 +150,17 @@ Find some guidance for implementing token refreshments
 | User/Visit | App | λ Authen | λ Author | Gateway | λ Func | DB/Store | Github |
       .         .         .         .         .         .         .         .
       |---(1)-->|         |         |         |         |         |         |
-      |         |-------------(2)------------>|         |         |         |
-      |         |         |         |<--(3)---|         |         |         |
-      |         |         |         |--------(4)------->|         |         |
-      |         |         |         |         |         |---(5)-->|         |
-      |         |         |         |         |         |<--(6)---|         |
-      |         |         |         |<-------(7)--------|         |         |
-      |         |         |         |---(8)-->|         |         |         |
-      |         |<------------(9)-------------|         |         |         |
+      |         |---(2)-->|         |         |         |         |         |
+      |         |         |-------------(3)------------>|         |         |
+      |         |         |         |         |         |---(4)-->|         |
+      |         |         |         |         |         |<--(5)---|         |
+      |         |         |<------------(6)-------------|         |         |
+      |         |<--(7)---|         |         |         |         |         |
       .         .         .         .         .         .         .         .
 ```
 
-1. User tries to act on a resource
+1. User tries to act on a resource, but - upon sniffing the localstorage and finding the expiration
+   date of the `HttpOnly` cookie has expired, runs a background job to refresh the token.
 2. App sends request to Gateway, but gateway doesn't have a cached/non-expired policy for the token
 3. Gateway doesn't find a cached IAM Policy that's valid (expired)
 4. Authorizer notices that the JWT has expired
@@ -198,6 +198,11 @@ Find an example
   ]
 }
 ```
+
+## Caching Considerations TODO
+
+- Add cache to API Gateway for `HttpOnly` headers for some - rarely changing - data
+- Add cache to ServiceWorker for some `fetch`es
 
 ## Development Journey
 
